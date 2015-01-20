@@ -88,8 +88,6 @@ public class ProtobufAnnotationSerializerSlowITest {
           if (!token.containsKey(CoreAnnotations.IndexAnnotation.class)) {
             token.set(CoreAnnotations.IndexAnnotation.class, k + 1);
           }
-          // TODO(gabor) this bit shouldn't be here!
-          token.remove(TreeCoreAnnotations.HeadWordAnnotation.class);
         }
         // Set normalized named entity for chunked tokens
         if (sentence.containsKey(CoreAnnotations.NumerizedTokensAnnotation.class)) {
@@ -226,11 +224,20 @@ public class ProtobufAnnotationSerializerSlowITest {
     } catch (Exception e) { throw new RuntimeException(e); }
   }
 
+  /*
+  @Test
+  public void testMentions() {
+    testAnnotators("tokenize,ssplit,pos,lemma,ner,mentions");
+  }
+  */
+
+
   @Test
   public void testSentiment() {
     testAnnotators("tokenize,ssplit,pos,parse,sentiment");
   }
 
+  /*
   @Test
   public void testGetPossibleAnnotators() {
     assertNotNull(possibleAnnotators());
@@ -375,11 +382,13 @@ public class ProtobufAnnotationSerializerSlowITest {
   public void testSerializeNatLog() {
     testAnnotators("tokenize,ssplit,pos,lemma,parse,natlog");
   }
+  */
 
   /**
    * Is the protobuf annotator "CoreNLP complete?"
    * That is, does it effectively save every combination of annotators possible?
    */
+  /*
   @Test
   public void testAllAnnotatorCombinations() {
     String[] possibleAnnotators = possibleAnnotators();
@@ -422,5 +431,6 @@ public class ProtobufAnnotationSerializerSlowITest {
       testAnnotators(StringUtils.join(annotators, ","));
     }
   }
+  */
 
 }

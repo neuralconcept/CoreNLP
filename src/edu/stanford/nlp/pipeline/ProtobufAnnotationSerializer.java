@@ -13,6 +13,7 @@ import edu.stanford.nlp.ling.CoreAnnotation;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.IndexedWord;
 import edu.stanford.nlp.naturalli.*;
+import edu.stanford.nlp.neural.rnn.RNNCoreAnnotations;
 import edu.stanford.nlp.semgraph.SemanticGraph;
 import edu.stanford.nlp.semgraph.SemanticGraphEdge;
 import edu.stanford.nlp.sentiment.SentimentCoreAnnotations;
@@ -120,7 +121,6 @@ import java.util.*;
  *
  * @author Gabor Angeli
  */
-// TODO(gabor) figure out how to de-serialize HeadWordAnnotation.class
 public class ProtobufAnnotationSerializer extends AnnotationSerializer {
 
   /** A global lock; necessary since dependency tree creation is not threadsafe */
@@ -282,13 +282,6 @@ public class ProtobufAnnotationSerializer extends AnnotationSerializer {
     if (getAndRegister(coreLabel, keysToSerialize, NormalizedNamedEntityTagAnnotation.class) != null) { builder.setNormalizedNER(getAndRegister(coreLabel, keysToSerialize, NormalizedNamedEntityTagAnnotation.class)); }
     if (coreLabel.containsKey(TimexAnnotation.class)) { builder.setTimexValue(toProto(getAndRegister(coreLabel, keysToSerialize, TimexAnnotation.class))); }
     if (coreLabel.containsKey(AnswerAnnotation.class)) { builder.setAnswer(getAndRegister(coreLabel, keysToSerialize, AnswerAnnotation.class)); }
-    if (coreLabel.containsKey(ProjectedCategoryAnnotation.class)) { builder.setProjectedCategory(getAndRegister(coreLabel, keysToSerialize, ProjectedCategoryAnnotation.class)); }
-    if (coreLabel.containsKey(HeadWordAnnotation.class)) {
-      Tree tree = coreLabel.get(HeadWordAnnotation.class);
-      if (tree.isLeaf() && tree.label() instanceof CoreLabel) {
-        builder.setHeadWordIndex(((CoreLabel) tree.label()).index() - 1);
-      }
-    }
     if (coreLabel.containsKey(XmlContextAnnotation.class)) {
       builder.setHasXmlContext(true);
       builder.addAllXmlContext(getAndRegister(coreLabel, keysToSerialize, XmlContextAnnotation.class));
@@ -462,6 +455,10 @@ public class ProtobufAnnotationSerializer extends AnnotationSerializer {
     }
     if (!Double.isNaN(parseTree.score())) {
       builder.setScore(parseTree.score());
+    }
+    Integer sentiment;
+    if (parseTree.label() instanceof CoreMap && (sentiment = ((CoreMap) parseTree.label()).get(RNNCoreAnnotations.PredictedClass.class)) != null) {
+      builder.setSentiment(CoreNLPProtos.Sentiment.valueOf(sentiment));
     }
     // Return
     return builder.build();
@@ -687,7 +684,6 @@ public class ProtobufAnnotationSerializer extends AnnotationSerializer {
     if (proto.hasHasXmlContext() && proto.getHasXmlContext()) { word.set(XmlContextAnnotation.class, proto.getXmlContextList()); }
     if (proto.hasCorefClusterID()) { word.set(CorefClusterIdAnnotation.class, proto.getCorefClusterID()); }
     if (proto.hasAnswer()) { word.set(AnswerAnnotation.class, proto.getAnswer()); }
-    if (proto.hasProjectedCategory()) { word.set(ProjectedCategoryAnnotation.class, proto.getProjectedCategory()); }
     if (proto.hasOperator()) { word.set(NaturalLogicAnnotations.OperatorAnnotation.class, fromProto(proto.getOperator())); }
     if (proto.hasPolarity()) { word.set(NaturalLogicAnnotations.PolarityAnnotation.class, fromProto(proto.getPolarity())); }
     // Non-default annotators
@@ -906,6 +902,10 @@ public class ProtobufAnnotationSerializer extends AnnotationSerializer {
       if (proto.hasYieldBeginIndex() && proto.hasYieldEndIndex()) {
         IntPair span = new IntPair(proto.getYieldBeginIndex(), proto.getYieldEndIndex());
         value.set(SpanAnnotation.class, span);
+      }
+      // Set sentiment
+      if (proto.hasSentiment()) {
+        value.set(RNNCoreAnnotations.PredictedClass.class, proto.getSentiment().getNumber());
       }
     }
     // Set score
